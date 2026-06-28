@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Creative Studio</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --ink: #0a0a0f;
+    --void: #07070c;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --accent3: #43d9ad;
+    --glass: rgba(255,255,255,0.04);
+    --glass-border: rgba(255,255,255,0.08);
+    --text: #f0f0f8;
+    --muted: rgba(240,240,248,0.5);
+    --font-display: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--void);
+    color: var(--text);
+    font-family: var(--font-display);
+    overflow-x: hidden;
+  }
+
+  /* ── Canvas ── */
+  #bg-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── Nav ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 4rem;
+    backdrop-filter: blur(20px);
+    background: rgba(7,7,12,0.7);
+    border-bottom: 1px solid var(--glass-border);
+    transition: all 0.3s ease;
+  }
+
+  .nav-logo {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2.5rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: color 0.3s;
+    cursor: pointer;
+  }
+
+  .nav-links a:hover { color: var(--text); }
+
+  /* ── Sections ── */
+  section {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Hero ── */
+  #hero {
+    flex-direction: column;
+    text-align: center;
+    padding: 0 2rem;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent3);
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.3s forwards;
+  }
+
+  .hero-title {
+    font-size: clamp(3.5rem, 10vw, 9rem);
+    font-weight: 800;
+    line-height: 0.92;
+    letter-spacing: -0.03em;
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.5s forwards;
+  }
+
+  .hero-title .line-accent {
+    display: block;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 50%, var(--accent3) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 520px;
+    line-height: 1.7;
+    margin: 0 auto 3rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.7s forwards;
+  }
+
+  .hero-ctas {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.9s forwards;
+  }
+
+  .btn-primary {
+    padding: 0.875rem 2.5rem;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    border: none;
+    border-radius: 3rem;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(108,99,255,0.4);
+  }
+
+  .btn-ghost {
+    padding: 0.875rem 2.5rem;
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    border-radius: 3rem;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-ghost:hover {
+    background: var(--glass);
+    border-color: var(--accent);
+  }
+
+  /* ── Scroll indicator ── */
+  .scroll-hint {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--muted);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0;
+    animation: fadeUp 1s ease 1.2s forwards;
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(to bottom, var(--accent), transparent);
+    animation: scrollPulse 2s ease infinite;
+  }
+
+  /* ── About ── */
+  #about {
+    padding: 6rem 4rem;
+  }
+
+  .about-inner {
+    max-width: 1100px;
+    width: 100%;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
+    align-items: center;
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent3);
+    margin-bottom: 1rem;
+  }
+
+  .section-title {
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-title em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .section-body {
+    color: var(--muted);
+    line-height: 1.8;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .stat-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: border-color 0.3s;
+  }
+
+  .stat-card:hover { border-color: var(--accent); }
+
+  .stat-num {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* 3D object canvas placeholder */
+  .about-visual {
+    position: relative;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #about-canvas {
+    width: 100%;
+    height: 100%;
+    border-radius: 24px;
+    overflow: hidden;
+  }
+
+  /* ── Services ── */
+  #services {
+    padding: 6rem 4rem;
+    flex-direction: column;
+  }
+
+  .services-header {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto 4rem;
+  }
+
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    max-width: 1100px;
+    width: 100%;
+  }
+
+  .service-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 2.5rem 2rem;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .service-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--card-accent), transparent);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+
+  .service-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(108,99,255,0.3);
+    background: rgba(108,99,255,0.06);
+  }
+
+  .service-card:hover::before { opacity: 1; }
+
+  .service-card:nth-child(1) { --card-accent: var(--accent); }
+  .service-card:nth-child(2) { --card-accent: var(--accent2); }
+  .service-card:nth-child(3) { --card-accent: var(--accent3); }
+  .service-card:nth-child(4) { --card-accent: #fbbf24; }
+  .service-card:nth-child(5) { --card-accent: #ec4899; }
+  .service-card:nth-child(6) { --card-accent: #06b6d4; }
+
+  .service-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: rgba(108,99,255,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+  }
+
+  .service-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  .service-desc {
+    font-size: 0.875rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* ── Portfolio ── */
+  #portfolio {
+    padding: 6rem 4rem;
+    flex-direction: column;
+  }
+
+  .portfolio-header {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto 4rem;
+  }
+
+  .portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1.25rem;
+    max-width: 1100px;
+    width: 100%;
+    grid-template-rows: auto auto;
+  }
+
+  .project-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .project-card:hover { transform: scale(1.02); border-color: rgba(108,99,255,0.4); }
+
+  .project-card:nth-child(1) { grid-column: span 7; }
+  .project-card:nth-child(2) { grid-column: span 5; }
+  .project-card:nth-child(3) { grid-column: span 4; }
+  .project-card:nth-child(4) { grid-column: span 4; }
+  .project-card:nth-child(5) { grid-column: span 4; }
+
+  .project-visual {
+    height: 220px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .project-visual canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .project-bg {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    position: relative;
+  }
+
+  .project-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 40%, rgba(7,7,12,0.9));
+  }
+
+  .project-info {
+    padding: 1.25rem 1.5rem 1.5rem;
+  }
+
+  .project-tag {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  .project-name {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+
+  .project-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  /* ── Contact ── */
+  #contact {
+    padding: 6rem 4rem;
+    flex-direction: column;
+  }
+
+  .contact-inner {
+    max-width: 900px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 4rem;
+    align-items: start;
+  }
+
+  .contact-left .section-body {
+    margin-bottom: 2.5rem;
+  }
+
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .contact-item-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  /* ── Form ── */
+  .contact-form {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 2.5rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-group.full { grid-column: span 2; }
+
+  label {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  input, textarea, select {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 0.875rem 1rem;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: border-color 0.2s, background 0.2s;
+    outline: none;
+    width: 100%;
+  }
+
+  input::placeholder, textarea::placeholder { color: rgba(240,240,248,0.25); }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    background: rgba(108,99,255,0.05);
+  }
+
+  textarea { height: 120px; resize: vertical; }
+
+  select {
+    appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23808090' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+  }
+
+  select option { background: #1a1a2e; }
+
+  .form-submit {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-top: 0.5rem;
+  }
+
+  .form-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(108,99,255,0.4);
+  }
+
+  .form-note {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 1rem;
+  }
+
+  /* ── Success message ── */
+  .form-success {
+    display: none;
+    text-align: center;
+    padding: 3rem 1rem;
+  }
+
+  .form-success.show { display: block; }
+
+  .success-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .success-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .success-sub { color: var(--muted); font-size: 0.9rem; }
+
+  /* ── Footer ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 3rem;
+    border-top: 1px solid var(--glass-border);
+    color: var(--muted);
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+  }
+
+  .footer-logo {
+    font-size: 1.2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.75rem;
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.3; transform: scaleY(1); }
+    50%       { opacity: 1;   transform: scaleY(1.1); }
+  }
+
+  /* ── Reveal on scroll ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; }
+    .about-inner { grid-template-columns: 1fr; gap: 3rem; }
+    .services-grid { grid-template-columns: 1fr; }
+    .portfolio-grid { grid-template-columns: 1fr; }
+    .project-card:nth-child(n) { grid-column: span 1; }
+    .contact-inner { grid-template-columns: 1fr; gap: 2rem; }
+    #about, #services, #portfolio, #contact { padding: 5rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Background Three.js Canvas -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- Navigation -->
+<nav>
+  <div class="nav-logo">NEXUS</div>
+  <ul class="nav-links">
+    <li><a onclick="scrollTo('#hero')">Home</a></li>
+    <li><a onclick="scrollTo('#about')">About</a></li>
+    <li><a onclick="scrollTo('#services')">Services</a></li>
+    <li><a onclick="scrollTo('#portfolio')">Work</a></li>
+    <li><a onclick="scrollTo('#contact')">Contact</a></li>
+  </ul>
+  <a class="btn-primary" onclick="scrollTo('#contact')" style="font-size:0.8rem;padding:0.6rem 1.5rem;">Start a project</a>
+</nav>
+
+<!-- PAGE 1: HERO -->
+<section id="hero">
+  <p class="hero-eyebrow">Creative · Immersive · Spatial</p>
+  <h1 class="hero-title">
+    We build<br>
+    <span class="line-accent">the future</span>
+  </h1>
+  <p class="hero-sub">Nexus crafts immersive digital experiences — where bold design meets spatial technology to move people forward.</p>
+  <div class="hero-ctas">
+    <a class="btn-primary" onclick="scrollTo('#portfolio')">See our work</a>
+    <a class="btn-ghost" onclick="scrollTo('#about')">Who we are</a>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-line"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<!-- PAGE 2: ABOUT -->
+<section id="about">
+  <div class="about-inner">
+    <div class="about-text reveal">
+      <p class="section-label">About Nexus</p>
+      <h2 class="section-title">Design isn't<br><em>decoration.</em><br>It's direction.</h2>
+      <p class="section-body">We're a 14-person studio obsessed with the intersection of motion, space, and code. Since 2018, we've partnered with founders and enterprise teams to ship products people actually want to use.</p>
+      <p class="section-body">Our process starts with understanding what your audience needs to feel — then engineering every pixel to deliver it.</p>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-num">142+</div>
+          <div class="stat-label">Projects shipped</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">98%</div>
+          <div class="stat-label">Client retention</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">6yr</div>
+          <div class="stat-label">Studio experience</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">22</div>
+          <div class="stat-label">Design awards</div>
+        </div>
+      </div>
+    </div>
+    <div class="about-visual reveal" style="transition-delay:0.2s">
+      <canvas id="about-canvas"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- PAGE 3: SERVICES -->
+<section id="services">
+  <div class="services-header reveal">
+    <p class="section-label">What we do</p>
+    <h2 class="section-title">Full-spectrum <em>creative</em> capability</h2>
+    <p class="section-body">From the first wireframe to the final pixel, we handle every layer of the experience.</p>
+  </div>
+  <div class="services-grid">
+    <div class="service-card reveal" style="transition-delay:0.1s">
+      <div class="service-icon">✦</div>
+      <div class="service-name">3D & Spatial Design</div>
+      <p class="service-desc">Real-time WebGL scenes, product visualization, and immersive environments built with Three.js and custom shaders.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.15s">
+      <div class="service-icon">◈</div>
+      <div class="service-name">Product Design</div>
+      <p class="service-desc">End-to-end UX/UI design: research, information architecture, interaction design, and polished component systems.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.2s">
+      <div class="service-icon">⬡</div>
+      <div class="service-name">Motion & Animation</div>
+      <p class="service-desc">Scroll-driven storytelling, micro-interactions, and brand motion that makes your product feel alive.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.25s">
+      <div class="service-icon">◎</div>
+      <div class="service-name">Frontend Engineering</div>
+      <p class="service-desc">React, Next.js, and WebGL development with a focus on performance, accessibility, and long-term maintainability.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.3s">
+      <div class="service-icon">⟁</div>
+      <div class="service-name">Brand Identity</div>
+      <p class="service-desc">Visual systems that hold up at any scale — logotype, color language, typography, and brand guidelines.</p>
+    </div>
+    <div class="service-card reveal" style="transition-delay:0.35s">
+      <div class="service-icon">◉</div>
+      <div class="service-name">Strategy & Consulting</div>
+      <p class="service-desc">Design audits, roadmap workshops, and growth-stage product strategy for teams at inflection points.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PAGE 4: PORTFOLIO -->
+<section id="portfolio">
+  <div class="portfolio-header reveal">
+    <p class="section-label">Selected work</p>
+    <h2 class="section-title">Projects we're <em>proud</em> of</h2>
+  </div>
+  <div class="portfolio-grid">
+    <div class="project-card reveal">
+      <div class="project-visual">
+        <div class="project-bg" style="background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);">
+          <canvas id="proj1-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+        </div>
+      </div>
+      <div class="project-info">
+        <div class="project-tag">3D Visualization · SaaS</div>
+        <div class="project-name">Astra — Data Observatory</div>
+        <p class="project-desc">Real-time satellite data visualized as a living 3D globe with 40k+ event streams.</p>
+      </div>
+    </div>
+    <div class="project-card reveal" style="transition-delay:0.1s">
+      <div class="project-visual">
+        <div class="project-bg" style="background: linear-gradient(135deg, #0d0d0d, #1a0533, #2d0b57);">
+          <canvas id="proj2-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+        </div>
+      </div>
+      <div class="project-info">
+        <div class="project-tag">Spatial UI · Fintech</div>
+        <div class="project-name">Vault — Wealth Interface</div>
+        <p class="project-desc">Portfolio visualization with particle-flow currency streams.</p>
+      </div>
+    </div>
+    <div class="project-card reveal" style="transition-delay:0.15s">
+      <div class="project-visual">
+        <div class="project-bg" style="background: linear-gradient(135deg, #001f1a, #003d2f, #00594a);">
+          <canvas id="proj3-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+        </div>
+      </div>
+      <div class="project-info">
+        <div class="project-tag">Motion · Biotech</div>
+        <div class="project-name">Synth — Protein Viewer</div>
+        <p class="project-desc">Interactive molecular structures for research teams.</p>
+      </div>
+    </div>
+    <div class="project-card reveal" style="transition-delay:0.2s">
+      <div class="project-visual">
+        <div class="project-bg" style="background: linear-gradient(135deg, #1a0a00, #3d1a00, #5c2900);">
+          <canvas id="proj4-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+        </div>
+      </div>
+      <div class="project-info">
+        <div class="project-tag">Brand · Music Tech</div>
+        <div class="project-name">Resonance — Audio Studio</div>
+        <p class="project-desc">Waveform-driven identity and digital experience.</p>
+      </div>
+    </div>
+    <div class="project-card reveal" style="transition-delay:0.25s">
+      <div class="project-visual">
+        <div class="project-bg" style="background: linear-gradient(135deg, #0a0020, #1a0040, #2b0066);">
+          <canvas id="proj5-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+        </div>
+      </div>
+      <div class="project-info">
+        <div class="project-tag">WebGL · Gaming</div>
+        <div class="project-name">Epoch — Game Landing</div>
+        <p class="project-desc">Cinematic scroll-driven launch site with real-time rendering.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PAGE 5: CONTACT -->
+<section id="contact">
+  <div class="contact-inner">
+    <div class="contact-left reveal">
+      <p class="section-label">Get in touch</p>
+      <h2 class="section-title">Let's build something <em>remarkable.</em></h2>
+      <p class="section-body">Tell us what you're working on. We respond within 24 hours and move fast when the fit is right.</p>
+      <div class="contact-item">
+        <div class="contact-item-icon">✉</div>
+        <span>hello@nexusstudio.io</span>
+      </div>
+      <div class="contact-item">
+        <div class="contact-item-icon">◎</div>
+        <span>San Francisco · London · Remote</span>
+      </div>
+      <div class="contact-item">
+        <div class="contact-item-icon">◷</div>
+        <span>Mon–Fri, 9am–6pm PT</span>
+      </div>
+    </div>
+    <div class="reveal" style="transition-delay:0.2s">
+      <div class="contact-form" id="contact-form-wrap">
+        <div id="form-fields">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fname">First name</label>
+              <input type="text" id="fname" placeholder="Alex" required>
+            </div>
+            <div class="form-group">
+              <label for="lname">Last name</label>
+              <input type="text" id="lname" placeholder="Chen">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="email">Email address</label>
+            <input type="email" id="email" placeholder="alex@company.com" required>
+          </div>
+          <div class="form-group">
+            <label for="company">Company</label>
+            <input type="text" id="company" placeholder="Acme Inc.">
+          </div>
+          <div class="form-group">
+            <label for="service">What are you looking for?</label>
+            <select id="service">
+              <option value="">Select a service…</option>
+              <option>3D & Spatial Design</option>
+              <option>Product Design (UX/UI)</option>
+              <option>Motion & Animation</option>
+              <option>Frontend Engineering</option>
+              <option>Brand Identity</option>
+              <option>Strategy & Consulting</option>
+              <option>Something else</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="budget">Budget range</label>
+            <select id="budget">
+              <option value="">Select a range…</option>
+              <option>Under $10k</option>
+              <option>$10k – $30k</option>
+              <option>$30k – $75k</option>
+              <option>$75k – $150k</option>
+              <option>$150k+</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="message">Tell us about your project</label>
+            <textarea id="message" placeholder="What are you building? What's the timeline? Any context helps…"></textarea>
+          </div>
+          <button class="form-submit" onclick="submitForm()">Send message →</button>
+          <p class="form-note">No spam, ever. We'll only use this to reply to you.</p>
+        </div>
+        <div class="form-success" id="form-success">
+          <div class="success-icon">✦</div>
+          <div class="success-title">Message received</div>
+          <p class="success-sub">Thanks for reaching out. Expect a reply within one business day.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">NEXUS</div>
+  <p>© 2025 Nexus Studio. All rights reserved.</p>
+</footer>
+
+<script>
+// ── Smooth scroll ──
+function scrollTo(id) {
+  document.querySelector(id).scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── Form submit ──
+function submitForm() {
+  const email = document.getElementById('email').value;
+  const fname = document.getElementById('fname').value;
+  if (!email || !fname) { alert('Please fill in your name and email.'); return; }
+  document.getElementById('form-fields').style.display = 'none';
+  document.getElementById('form-success').classList.add('show');
+}
+
+// ── Intersection Observer for reveal ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ══════════════════════════════════════════
+// MAIN BACKGROUND THREE.JS SCENE
+// ══════════════════════════════════════════
+const bgCanvas = document.getElementById('bg-canvas');
+const bgRenderer = new THREE.WebGLRenderer({ canvas: bgCanvas, antialias: true, alpha: true });
+bgRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+bgRenderer.setSize(window.innerWidth, window.innerHeight);
+bgRenderer.setClearColor(0x07070c, 1);
+
+const bgScene = new THREE.Scene();
+const bgCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+bgCamera.position.z = 30;
+
+// Particle field
+const particleCount = 3000;
+const positions = new Float32Array(particleCount * 3);
+const colors = new Float32Array(particleCount * 3);
+const pColors = [
+  new THREE.Color(0x6c63ff),
+  new THREE.Color(0xff6584),
+  new THREE.Color(0x43d9ad),
+  new THREE.Color(0xffffff),
+];
+
+for (let i = 0; i < particleCount; i++) {
+  positions[i*3]   = (Math.random() - 0.5) * 100;
+  positions[i*3+1] = (Math.random() - 0.5) * 100;
+  positions[i*3+2] = (Math.random() - 0.5) * 80;
+  const c = pColors[Math.floor(Math.random() * pColors.length)];
+  colors[i*3] = c.r; colors[i*3+1] = c.g; colors[i*3+2] = c.b;
+}
+
+const pGeo = new THREE.BufferGeometry();
+pGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+pGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+const pMat = new THREE.PointsMaterial({ size: 0.15, vertexColors: true, transparent: true, opacity: 0.7 });
+bgScene.add(new THREE.Points(pGeo, pMat));
+
+// Floating wireframe shapes
+const shapes = [];
+const shapeGeos = [
+  new THREE.IcosahedronGeometry(2, 1),
+  new THREE.OctahedronGeometry(1.5),
+  new THREE.TetrahedronGeometry(1.5),
+  new THREE.TorusGeometry(1.5, 0.4, 8, 20),
+];
+const wireMat = new THREE.MeshBasicMaterial({ color: 0x6c63ff, wireframe: true, transparent: true, opacity: 0.15 });
+
+for (let i = 0; i < 12; i++) {
+  const geo = shapeGeos[Math.floor(Math.random() * shapeGeos.length)];
+  const mesh = new THREE.Mesh(geo, wireMat.clone());
+  mesh.position.set(
+    (Math.random() - 0.5) * 70,
+    (Math.random() - 0.5) * 70,
+    (Math.random() - 0.5) * 30 - 5
+  );
+  mesh.userData = {
+    rx: (Math.random() - 0.5) * 0.005,
+    ry: (Math.random() - 0.5) * 0.007,
+    rz: (Math.random() - 0.5) * 0.004,
+  };
+  bgScene.add(mesh);
+  shapes.push(mesh);
+}
+
+// Mouse parallax
+let mouseX = 0, mouseY = 0;
+document.addEventListener('mousemove', e => {
+  mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+  mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+});
+
+let scrollY = 0;
+window.addEventListener('scroll', () => { scrollY = window.scrollY; });
+
+function bgAnimate() {
+  requestAnimationFrame(bgAnimate);
+  const t = Date.now() * 0.0005;
+
+  bgCamera.position.x += (mouseX * 3 - bgCamera.position.x) * 0.02;
+  bgCamera.position.y += (-mouseY * 3 - bgCamera.position.y) * 0.02;
+  bgCamera.position.z = 30 - scrollY * 0.005;
+  bgCamera.lookAt(0, 0, 0);
+
+  shapes.forEach(s => {
+    s.rotation.x += s.userData.rx;
+    s.rotation.y += s.userData.ry;
+    s.rotation.z += s.userData.rz;
+  });
+
+  pGeo.attributes.position.array.forEach((v, i) => {
+    if (i % 3 === 1) {
+      pGeo.attributes.position.array[i] += Math.sin(t + i) * 0.003;
+    }
+  });
+  pGeo.attributes.position.needsUpdate = true;
+
+  bgRenderer.render(bgScene, bgCamera);
+}
+bgAnimate();
+
+// ══════════════════════════════════════════
+// ABOUT SECTION — Torus Knot
+// ══════════════════════════════════════════
+const aboutCanvas = document.getElementById('about-canvas');
+const aRenderer = new THREE.WebGLRenderer({ canvas: aboutCanvas, antialias: true, alpha: true });
+aRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+aRenderer.setClearColor(0x000000, 0);
+
+const aScene = new THREE.Scene();
+const aCamera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+aCamera.position.z = 5;
+
+const aLight1 = new THREE.PointLight(0x6c63ff, 2, 20);
+aLight1.position.set(3, 3, 3);
+aScene.add(aLight1);
+const aLight2 = new THREE.PointLight(0x43d9ad, 1.5, 20);
+aLight2.position.set(-3, -2, 2);
+aScene.add(aLight2);
+aScene.add(new THREE.AmbientLight(0x111122, 0.5));
+
+const torusKnot = new THREE.Mesh(
+  new THREE.TorusKnotGeometry(1.4, 0.4, 128, 32, 2, 3),
+  new THREE.MeshPhongMaterial({ color: 0x3d3680, shininess: 100, specular: 0x6c63ff, wireframe: false })
+);
+aScene.add(torusKnot);
+
+const wireKnot = new THREE.Mesh(
+  new THREE.TorusKnotGeometry(1.42, 0.41, 128, 32, 2, 3),
+  new THREE.MeshBasicMaterial({ color: 0x6c63ff, wireframe: true, transparent: true, opacity: 0.2 })
+);
+aScene.add(wireKnot);
+
+function resizeAbout() {
+  const rect = aboutCanvas.getBoundingClientRect();
+  aRenderer.setSize(rect.width, rect.height);
+  aCamera.aspect = rect.width / rect.height;
+  aCamera.updateProjectionMatrix();
+}
+
+let aMouseX = 0, aMouseY = 0;
+aboutCanvas.parentElement.addEventListener('mousemove', e => {
+  const rect = aboutCanvas.getBoundingClientRect();
+  aMouseX = (e.clientX - rect.left) / rect.width - 0.5;
+  aMouseY = (e.clientY - rect.top) / rect.height - 0.5;
+});
+
+function aAnimate() {
+  requestAnimationFrame(aAnimate);
+  const t = Date.now() * 0.001;
+  torusKnot.rotation.x = t * 0.3 + aMouseY * 0.5;
+  torusKnot.rotation.y = t * 0.5 + aMouseX * 0.5;
+  wireKnot.rotation.x = torusKnot.rotation.x;
+  wireKnot.rotation.y = torusKnot.rotation.y;
+  aLight1.position.x = Math.sin(t) * 4;
+  aLight1.position.y = Math.cos(t * 0.7) * 3;
+  aRenderer.render(aScene, aCamera);
+}
+resizeAbout();
+aAnimate();
+
+// ══════════════════════════════════════════
+// PORTFOLIO MINI SCENES
+// ══════════════════════════════════════════
+function makePortfolioScene(canvasId, color1, color2, type) {
+  const c = document.getElementById(canvasId);
+  if (!c) return;
+  const r = new THREE.WebGLRenderer({ canvas: c, antialias: true, alpha: true });
+  r.setPixelRatio(1);
+  r.setClearColor(0x000000, 0);
+
+  const sc = new THREE.Scene();
+  const cam = new THREE.PerspectiveCamera(60, c.parentElement.offsetWidth / c.parentElement.offsetHeight, 0.1, 100);
+  cam.position.z = 4;
+
+  const l1 = new THREE.PointLight(color1, 2, 15);
+  l1.position.set(2, 2, 2);
+  sc.add(l1);
+  const l2 = new THREE.PointLight(color2, 1.5, 15);
+  l2.position.set(-2, -1, 1);
+  sc.add(l2);
+
+  let mesh;
+  if (type === 0) {
+    mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2, 1), new THREE.MeshPhongMaterial({ color: color1, shininess: 80, specular: color2 }));
+  } else if (type === 1) {
+    mesh = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.35, 16, 48), new THREE.MeshPhongMaterial({ color: color1, shininess: 100, specular: color2 }));
+  } else if (type === 2) {
+    mesh = new THREE.Mesh(new THREE.OctahedronGeometry(1.1), new THREE.MeshPhongMaterial({ color: color1, shininess: 60, specular: color2 }));
+  } else if (type === 3) {
+    mesh = new THREE.Mesh(new THREE.TorusKnotGeometry(0.7, 0.25, 64, 16, 2, 3), new THREE.MeshPhongMaterial({ color: color1, shininess: 120, specular: color2 }));
+  } else {
+    mesh = new THREE.Mesh(new THREE.DodecahedronGeometry(1.1), new THREE.MeshPhongMaterial({ color: color1, shininess: 90, specular: color2 }));
+  }
+  sc.add(mesh);
+
+  function resize() {
+    const rect = c.getBoundingClientRect();
+    r.setSize(rect.width, rect.height);
+    cam.aspect = rect.width / rect.height;
+    cam.updateProjectionMatrix();
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const t = Date.now() * 0.001;
+    mesh.rotation.x = t * 0.4;
+    mesh.rotation.y = t * 0.6;
+    l1.position.x = Math.sin(t * 1.2) * 3;
+    l1.position.y = Math.cos(t * 0.8) * 2;
+    r.render(sc, cam);
+  }
+  resize();
+  animate();
+}
+
+// Run after a short delay to let DOM paint
+setTimeout(() => {
+  makePortfolioScene('proj1-canvas', 0x6c63ff, 0x43d9ad, 0);
+  makePortfolioScene('proj2-canvas', 0xaa88ff, 0xff6584, 1);
+  makePortfolioScene('proj3-canvas', 0x43d9ad, 0x00ff88, 2);
+  makePortfolioScene('proj4-canvas', 0xff6584, 0xfbbf24, 3);
+  makePortfolioScene('proj5-canvas', 0x818cf8, 0xc084fc, 4);
+}, 500);
+
+// ── Resize handler ──
+window.addEventListener('resize', () => {
+  bgRenderer.setSize(window.innerWidth, window.innerHeight);
+  bgCamera.aspect = window.innerWidth / window.innerHeight;
+  bgCamera.updateProjectionMatrix();
+  resizeAbout();
+});
+</script>
+</body>
+</html>
